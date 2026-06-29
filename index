@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Полное восстановление портфеля облигаций — Июнь 2026</title>
+    <style>
+        :root {
+            --bg: #0a0e13;
+            --card: #11171f;
+            --border: #1e2a36;
+            --text: #d1d7e0;
+            --muted: #7a8494;
+            --green: #2ea955;
+            --red: #e0556a;
+            --yellow: #d4a43a;
+            --blue: #5b9cf5;
+            --accent-ofz: #2973d6;
+            --accent-fund: #7c4dff;
+            --accent-corp: #e67e3a;
+            --accent-new: #00c9a7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            line-height: 1.5;
+            padding: 16px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 16px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+        }
+        .header .icon { font-size: 48px; margin-bottom: 8px; }
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #5b9cf5, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .subtitle { color: var(--muted); font-size: 0.95em; }
+        .header .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.82em;
+            font-weight: 700;
+            border: 1px solid var(--border);
+            background: #1a2433;
+        }
+        .badge.ofz { color: #5b9cf5; border-color: #2973d666; }
+        .badge.corp { color: #e67e3a; border-color: #e67e3a66; }
+        .badge.fund { color: #7c4dff; border-color: #7c4dff66; }
+        .badge.new { color: #00c9a7; border-color: #00c9a766; }
+        .badge.count { color: var(--text); }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .stat .val { font-size: 1.6em; font-weight: 800; }
+        .stat .lbl { font-size: 0.78em; color: var(--muted); margin-top: 2px; }
+        .stat.g .val { color: var(--green); }
+        .stat.b .val { color: var(--blue); }
+        .stat.y .val { color: var(--yellow); }
+        .stat.r .val { color: var(--red); }
+        .stat.n .val { color: var(--accent-new); }
+
+        /* Section */
+        .section {
+            margin: 28px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.2em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section .count { font-size: 0.7em; color: var(--muted); font-weight: 400; }
+
+        /* Table */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 12px 0 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            min-width: 900px;
+        }
+        thead th {
+            background: #151d29;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.78em;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: var(--muted);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 10px;
+            border-bottom: 1px solid #1a2533;
+            vertical-align: middle;
+        }
+        tbody tr {
+            transition: background 0.15s;
+        }
+        tbody tr:hover { background: #161f2c; }
+        tbody tr.new-addition {
+            background: #0a2a23;
+            border-left: 3px solid var(--accent-new);
+        }
+        tbody tr.new-addition:hover { background: #0d332b; }
+        .isin-code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.8em;
+            color: var(--blue);
+            cursor: pointer;
+            user-select: all;
+            white-space: nowrap;
+        }
+        .isin-code:hover { text-decoration: underline; }
+        .qty { font-weight: 700; text-align: center; font-size: 1em; }
+        .price { text-align: right; font-family: monospace; }
+        .total { text-align: right; font-family: monospace; font-weight: 600; }
+        .muted { color: var(--muted); font-size: 0.82em; }
+        .tag-sm {
+            display: inline-block;
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .tag-ofz { background: #1a3060; color: #5b9cf5; }
+        .tag-corp { background: #3d2518; color: #e67e3a; }
+        .tag-fund { background: #281d4a; color: #7c4dff; }
+        .tag-new { background: #0a332b; color: #00c9a7; }
+
+        /* Checkbox */
+        .chk input { display: none; }
+        .chk label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.75em;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+        .chk .box {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #334155;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .chk input:checked + .box {
+            background: var(--green);
+            border-color: var(--green);
+        }
+        .chk input:checked + .box::after { content: '✓'; color: #fff; font-weight: 700; }
+        .chk input:checked ~ span { color: var(--green); }
+
+        /* Progress */
+        .progress-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .progress-card h3 { font-size: 1em; margin-bottom: 12px; }
+        .bar-outer {
+            height: 18px;
+            background: #0d141e;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #2973d6, #2ea955);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.4s;
+        }
+        .progress-card .txt { text-align: center; margin-top: 8px; font-size: 0.85em; color: var(--muted); }
+
+        /* Summary */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 16px;
+            text-align: center;
+            font-size: 0.82em;
+        }
+        .summary div { padding: 8px; background: #0d141e; border-radius: 8px; }
+        .summary .big { font-size: 1.3em; font-weight: 700; }
+
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8em;
+            border-top: 1px solid var(--border);
+        }
+        .copy-toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--green);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .copy-toast.show { opacity: 1; }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.3em; }
+            table { font-size: 0.72em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Toast -->
+        <div class="copy-toast" id="toast">✅ ISIN скопирован!</div>
+
+        <!-- Header -->
+        <div class="header">
+            <div class="icon">📋</div>
+            <h1>Полное восстановление портфеля облигаций</h1>
+            <p class="subtitle">Счёт 423U9LE · Все позиции из старого портфеля + новые закупки</p>
+            <div class="badge-row">
+                <span class="badge ofz">🏛 ОФЗ: 14 выпусков</span>
+                <span class="badge corp">🏢 Корпораты: 10 выпусков</span>
+                <span class="badge fund">💵 Фонд: 1</span>
+                <span class="badge new">🆕 Добавлено: 6 позиций</span>
+                <span class="badge count">📦 Всего: 25 позиций</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat b"><div class="val">~103 000 ₽</div><div class="lbl">Общий объём</div></div>
+            <div class="stat g"><div class="val">25</div><div class="lbl">Всего облигаций</div></div>
+            <div class="stat y"><div class="val">14</div><div class="lbl">ОФЗ</div></div>
+            <div class="stat r"><div class="val">10</div><div class="lbl">Корпоративных</div></div>
+            <div class="stat n"><div class="val">+6</div><div class="lbl">Новых позиций</div></div>
+            <div class="stat g"><div class="val">1</div><div class="lbl">Фонд LQDT</div></div>
+        </div>
+
+        <!-- ============ СЕКЦИЯ 1: ОФЗ ============ -->
+        <div class="section">
+            <h2>🏛️ ОФЗ (Облигации федерального займа) <span class="count">14 выпусков</span></h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>ISIN</th>
+                        <th>Кол-во</th>
+                        <th>Цена ~</th>
+                        <th>Сумма ~</th>
+                        <th>Дюрация</th>
+                        <th>Комментарий</th>
+                        <th>✓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>ОФЗ 26218</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26218RMFS6</td><td class="qty">5</td><td class="price">~809</td><td class="total">~4 046</td><td class="muted">5л 2м</td><td class="muted">Средний срок. Держать до погашения.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26218"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26221</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26221RMFS5</td><td class="qty">5</td><td class="price">~721</td><td class="total">~3 605</td><td class="muted">6л 8м</td><td class="muted">Средний срок.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26221"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26225</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26225RMFS3</td><td class="qty">5</td><td class="price">~654</td><td class="total">~3 269</td><td class="muted">7л 10м</td><td class="muted">Длинный. Рост при снижении ставки.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26225"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26230</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26230RMFS3</td><td class="qty">5</td><td class="price">~598</td><td class="total">~2 992</td><td class="muted">12л 8м</td><td class="muted">Очень длинный. Волатилен.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26230"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26233</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26233RMFS1</td><td class="qty">5</td><td class="price">~588</td><td class="total">~2 940</td><td class="muted">9л</td><td class="muted">Длинный.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26233"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26235</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26235RMFS6</td><td class="qty">5</td><td class="price">~733</td><td class="total">~3 664</td><td class="muted">4г 8м</td><td class="muted">Средний. Хороший компромисс риск/доход.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26235"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26238</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26238RMFS4</td><td class="qty">15</td><td class="price">~530</td><td class="total">~7 943</td><td class="muted">14л 10м</td><td class="muted">Самый длинный. Макс. потенциал.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26238"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26240</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26240RMFS0</td><td class="qty">5</td><td class="price">~605</td><td class="total">~3 025</td><td class="muted">10л 1м</td><td class="muted">Длинный.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26240"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26243</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26243RMFS4</td><td class="qty">5 + <span style="color:#00c9a7; font-weight:800;">15</span></td><td class="price">~706</td><td class="total">~14 127</td><td class="muted">11л 10м</td><td class="muted">🆕 <strong>ДОКУПАЕМ 15 шт!</strong> Самый доходный.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26243"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26244</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26244RMFS2</td><td class="qty">6</td><td class="price">~860</td><td class="total">~5 158</td><td class="muted">7л 8м</td><td class="muted">Средний.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26244"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26246</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26246RMFS7</td><td class="qty">5</td><td class="price">~868</td><td class="total">~4 340</td><td class="muted">9л 8м</td><td class="muted">Длинный.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26246"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26247</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26247RMFS5</td><td class="qty">1 + <span style="color:#00c9a7; font-weight:800;">15</span></td><td class="price">~839</td><td class="total">~13 416</td><td class="muted">12л 10м</td><td class="muted">🆕 <strong>ДОКУПАЕМ 15 шт!</strong></td><td class="chk"><label><input type="checkbox" data-id="ofz-26247"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26248</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26248RMFS3</td><td class="qty">1 + <span style="color:#00c9a7; font-weight:800;">15</span></td><td class="price">~833</td><td class="total">~13 328</td><td class="muted">13л 10м</td><td class="muted">🆕 <strong>ДОКУПАЕМ 15 шт!</strong></td><td class="chk"><label><input type="checkbox" data-id="ofz-26248"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26249</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26249RMFS1</td><td class="qty">5</td><td class="price">~861</td><td class="total">~4 304</td><td class="muted">5л 11м</td><td class="muted">Средний.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26249"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ОФЗ 26254</strong> <span class="tag-sm tag-ofz">ОФЗ</span></td><td class="isin-code">SU26254RMFS8</td><td class="qty">1</td><td class="price">~890</td><td class="total">~890</td><td class="muted">14л 3м</td><td class="muted">Очень длинный.</td><td class="chk"><label><input type="checkbox" data-id="ofz-26254"><span class="box"></span><span>Есть</span></label></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============ СЕКЦИЯ 2: КОРПОРАТИВНЫЕ ============ -->
+        <div class="section">
+            <h2>🏢 Корпоративные облигации (ВДО) <span class="count">10 выпусков</span></h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>ISIN</th>
+                        <th>Кол-во</th>
+                        <th>Цена ~</th>
+                        <th>Сумма ~</th>
+                        <th>Срок</th>
+                        <th>Комментарий</th>
+                        <th>✓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>АПРИ 2Р11</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A108ES1</td><td class="qty">1</td><td class="price">~990</td><td class="total">~990</td><td class="muted">2г 1м</td><td class="muted">Застройщик. Высокий риск.</td><td class="chk"><label><input type="checkbox" data-id="corp-apri-2p11"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>АПРИ 2Р13</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A109YN1</td><td class="qty">5</td><td class="price">~949</td><td class="total">~4 744</td><td class="muted">3г</td><td class="muted">Застройщик. Купон ~30%.</td><td class="chk"><label><input type="checkbox" data-id="corp-apri-2p13"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr class="new-addition"><td><strong>АПРИ 2Р14</strong> <span class="tag-sm tag-new">🆕 НОВАЯ</span></td><td class="isin-code">RU000A10ERC0</td><td class="qty" style="color:#00c9a7; font-weight:800;">15</td><td class="price">~950</td><td class="total" style="color:#00c9a7;">~14 250</td><td class="muted">~4г</td><td class="muted">🆕 <strong>НОВАЯ ПОЗИЦИЯ!</strong> Застройщик. Флоатер. Крайне высокий риск!</td><td class="chk"><label><input type="checkbox" data-id="corp-apri-2p14"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>БалтЛизП10</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A107BE3</td><td class="qty">5</td><td class="price">~986</td><td class="total">~4 930</td><td class="muted">9м 10д</td><td class="muted">Лизинг. Короткий.</td><td class="chk"><label><input type="checkbox" data-id="corp-baltliz"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>Делимобиль 1P-03</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A108HX9</td><td class="qty">10</td><td class="price">~869</td><td class="total">~8 688</td><td class="muted">1г 1м</td><td class="muted">Каршеринг. Флоатер.</td><td class="chk"><label><input type="checkbox" data-id="corp-delimobil"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ЛТрейд1P11</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A107QK5</td><td class="qty">5</td><td class="price">~881</td><td class="total">~4 406</td><td class="muted">2г 6м</td><td class="muted">Лизинг.</td><td class="chk"><label><input type="checkbox" data-id="corp-ltreid"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>УралСт1Р05</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A106P54</td><td class="qty">10</td><td class="price">~910</td><td class="total">~9 098</td><td class="muted">1г 7м</td><td class="muted">Металлургия. Хороший плюс.</td><td class="chk"><label><input type="checkbox" data-id="corp-uralst"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>ЦР БО-03</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A104ES6</td><td class="qty">10</td><td class="price">~576</td><td class="total">~5 763</td><td class="muted">1г 6м</td><td class="muted">Микрофинансы. Высокий риск.</td><td class="chk"><label><input type="checkbox" data-id="corp-cr"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>Яндекс Финтех 01</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A108GQ5</td><td class="qty">5</td><td class="price">~360</td><td class="total">~1 799</td><td class="muted">2г 5м</td><td class="muted">Яндекс. Умеренный риск.</td><td class="chk"><label><input type="checkbox" data-id="corp-yandex"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr><td><strong>iКарРус1P6</strong> <span class="tag-sm tag-corp">ВДО</span></td><td class="isin-code">RU000A109GH5</td><td class="qty">5</td><td class="price">~948</td><td class="total">~4 738</td><td class="muted">1г 11м</td><td class="muted">Каршеринг. Флоатер.</td><td class="chk"><label><input type="checkbox" data-id="corp-ikarrus1p6"><span class="box"></span><span>Есть</span></label></td></tr>
+                    <tr class="new-addition"><td><strong>iКарРус1P7</strong> <span class="tag-sm tag-new">🆕 НОВАЯ</span></td><td class="isin-code">RU000A10CCG7</td><td class="qty">5 + <span style="color:#00c9a7; font-weight:800;">15</span></td><td class="price">~941</td><td class="total" style="color:#00c9a7;">~18 820</td><td class="muted">1г 1м</td><td class="muted">🆕 <strong>ДОКУПАЕМ 15 шт!</strong> Проверь валюту (CNY?).</td><td class="chk"><label><input type="checkbox" data-id="corp-ikarrus1p7"><span class="box"></span><span>Есть</span></label></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============ СЕКЦИЯ 3: ФОНДЫ ============ -->
+        <div class="section">
+            <h2>💵 Фонды денежного рынка <span class="count">1 позиция</span></h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>ISIN / Тикер</th>
+                        <th>Кол-во</th>
+                        <th>Цена ~</th>
+                        <th>Сумма ~</th>
+                        <th>Доходность</th>
+                        <th>Комментарий</th>
+                        <th>✓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="new-addition">
+                        <td><strong>Фонд Ежемесячный доход</strong> <span class="tag-sm tag-new">🆕 ДОКУПКА</span></td>
+                        <td class="isin-code">RU000A1043A4 <br><span style="color:#7c4dff;">Тикер: LQDT</span></td>
+                        <td class="qty">1 + <span style="color:#00c9a7; font-weight:800;">15</span></td>
+                        <td class="price">~1 025</td>
+                        <td class="total" style="color:#00c9a7;">~16 400</td>
+                        <td class="muted">≈Ключевая ставка</td>
+                        <td class="muted">🆕 <strong>ДОКУПАЕМ 15 шт!</strong> Подушка безопасности. Покупать рыночной заявкой.</td>
+                        <td class="chk"><label><input type="checkbox" data-id="fund-lqdt"><span class="box"></span><span>Есть</span></label></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ============ PROGRESS ============ -->
+        <div class="progress-card">
+            <h3>📈 Прогресс восстановления портфеля</h3>
+            <div class="bar-outer"><div class="bar-inner" id="progressBar"></div></div>
+            <p class="txt" id="progressText">0 из 25 позиций куплено (0%)</p>
+            <div class="summary">
+                <div><span class="big" style="color:#5b9cf5;">14</span><br>ОФЗ</div>
+                <div><span class="big" style="color:#e67e3a;">10</span><br>Корпоратов</div>
+                <div><span class="big" style="color:#7c4dff;">1</span><br>Фонд</div>
+                <div><span class="big" style="color:#00c9a7;">6</span><br>🆕 Добавок</div>
+                <div><span class="big">~103 000 ₽</span><br>Общий объём</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            💡 <strong>Алгоритм покупки:</strong> Для ОФЗ и ВДО — лимитная заявка на 10–15 коп. ниже Ask в стакане. Для LQDT — рыночная.<br>
+            ⚠️ <strong>Напоминание:</strong> АПРИ 2Р14, ЦР БО-03, УралСт — высокорисковые бумаги. Следи за новостями эмитентов.<br><br>
+            Сохранено: Июнь 2026 · Счёт 423U9LE
+        </div>
+
+    </div>
+
+    <script>
+        // Copy ISIN
+        document.querySelectorAll('.isin-code').forEach(el => {
+            el.addEventListener('click', function() {
+                const text = this.textContent.split('\n')[0].trim();
+                navigator.clipboard.writeText(text).then(() => {
+                    const toast = document.getElementById('toast');
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 1800);
+                });
+            });
+        });
+
+        // Progress
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const bar = document.getElementById('progressBar');
+        const txt = document.getElementById('progressText');
+        const total = checkboxes.length;
+
+        const saved = JSON.parse(localStorage.getItem('portfolioFullProgress') || '{}');
+        checkboxes.forEach(cb => { if (saved[cb.dataset.id]) cb.checked = true; });
+
+        function update() {
+            const done = document.querySelectorAll('input[type="checkbox"]:checked').length;
+            const pct = Math.round((done / total) * 100);
+            bar.style.width = pct + '%';
+            txt.textContent = done + ' из ' + total + ' позиций куплено (' + pct + '%)';
+            if (pct === 100) {
+                bar.style.background = '#2ea955';
+                txt.textContent = '🎉 ПОРТФЕЛЬ ПОЛНОСТЬЮ ВОССТАНОВЛЕН! 🎉';
+            } else {
+                bar.style.background = 'linear-gradient(90deg, #2973d6, #2ea955)';
+            }
+            const state = {};
+            checkboxes.forEach(cb => { state[cb.dataset.id] = cb.checked; });
+            localStorage.setItem('portfolioFullProgress', JSON.stringify(state));
+        }
+        checkboxes.forEach(cb => cb.addEventListener('change', update));
+        update();
+    </script>
+</body>
+</html>
